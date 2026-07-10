@@ -2,35 +2,66 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   ParkingSquare,
-  ClipboardList,
-  Wallet,
-  User,
   LogOut,
-  LogIn,
-  Users,
+  Shield,
+  User,
 } from "lucide-react";
 
 import useAuth from "../../hooks/useAuth";
 
 const linksByRole = {
   driver: [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Book Slot", path: "/book-slot", icon: ParkingSquare },
-    { name: "My Bookings", path: "/bookings", icon: ClipboardList },
-    { name: "Wallet", path: "/wallet", icon: Wallet },
-    { name: "Profile", path: "/profile", icon: User },
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Parking Availability",
+      path: "/parking",
+      icon: ParkingSquare,
+    },
   ],
+
   gate_staff: [
-    { name: "Gate Dashboard", path: "/gate", icon: LogIn },
-    { name: "Parking Slots", path: "/slots", icon: ParkingSquare },
-    { name: "Profile", path: "/profile", icon: User },
+    {
+      name: "Gate Dashboard",
+      path: "/gate",
+      icon: Shield,
+    },
+    {
+      name: "Parking Slots",
+      path: "/parking",
+      icon: ParkingSquare,
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: User,
+    },
   ],
+
   admin: [
-    { name: "Admin Dashboard", path: "/admin", icon: LayoutDashboard },
-    { name: "Gate Dashboard", path: "/gate", icon: LogIn },
-    { name: "Parking Slots", path: "/slots", icon: ParkingSquare },
-    { name: "Users", path: "/admin", icon: Users },
-    { name: "Profile", path: "/profile", icon: User },
+    {
+      name: "Admin Dashboard",
+      path: "/admin",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Gate Dashboard",
+      path: "/gate",
+      icon: Shield,
+    },
+    {
+      name: "Parking Slots",
+      path: "/parking",
+      icon: ParkingSquare,
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: User,
+    },
   ],
 };
 
@@ -67,7 +98,13 @@ export default function Sidebar() {
         🚗 SlotSmart
       </h2>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <nav
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
         {links.map((link) => {
           const Icon = link.icon;
 
@@ -84,6 +121,7 @@ export default function Sidebar() {
                 textDecoration: "none",
                 borderRadius: "10px",
                 background: isActive ? "#1A5F7A" : "transparent",
+                transition: "0.2s",
               })}
             >
               <Icon size={20} />
@@ -109,7 +147,10 @@ export default function Sidebar() {
           justifyContent: "center",
         }}
       >
-        <LogOut size={18} style={{ marginRight: 8 }} />
+        <LogOut
+          size={18}
+          style={{ marginRight: 8 }}
+        />
         Logout
       </button>
     </aside>
