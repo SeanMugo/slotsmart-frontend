@@ -27,7 +27,7 @@ function App() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/slots" element={<Parking />} />
+        <Route path="/parking" element={<Parking />} />
 
         <Route
           path="/gate"

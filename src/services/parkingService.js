@@ -9,6 +9,37 @@ export const getParkingSlots = async () => {
   return response.data;
 };
 
+export const createParkingSlot = async (data) => {
+  const response = await api.post(
+    "/slots/",
+    data
+  );
+
+  return response.data;
+};
+
+export const updateParkingSlot = async (
+  slotId,
+  data
+) => {
+  const response = await api.patch(
+    `/slots/${slotId}/`,
+    data
+  );
+
+  return response.data;
+};
+
+export const deleteParkingSlot = async (
+  slotId
+) => {
+  const response = await api.delete(
+    `/slots/${slotId}/`
+  );
+
+  return response.data;
+};
+
 // =========================
 // PARKING SESSIONS
 // =========================
@@ -19,12 +50,18 @@ export const getParkingSessions = async () => {
 };
 
 export const getActiveSession = async () => {
-  const response = await api.get("/sessions/active/");
+  const response = await api.get(
+    "/sessions/active/"
+  );
+
   return response.data;
 };
 
 export const getSessionHistory = async () => {
-  const response = await api.get("/sessions/history/");
+  const response = await api.get(
+    "/sessions/history/"
+  );
+
   return response.data;
 };
 
@@ -33,7 +70,11 @@ export const getSessionHistory = async () => {
 // =========================
 
 export const checkIn = async (data) => {
-  const response = await api.post("/sessions/check_in/", data);
+  const response = await api.post(
+    "/sessions/check_in/",
+    data
+  );
+
   return response.data;
 };
 
@@ -41,7 +82,12 @@ export const checkIn = async (data) => {
 // CHECK OUT
 // =========================
 
-export const checkOut = async (sessionId) => {
-  const response = await api.post(`/sessions/${sessionId}/check_out/`);
+export const checkOut = async (
+  sessionId
+) => {
+  const response = await api.post(
+    `/sessions/${sessionId}/check_out/`
+  );
+
   return response.data;
 };

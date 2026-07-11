@@ -1,27 +1,33 @@
+import { useState } from "react";
+import toast from "react-hot-toast";
+
 import useParking from "../hooks/useParking";
-import { ParkingSquare, CarFront, Wrench, CircleCheck } from "lucide-react";
+import useAuth from "../hooks/useAuth";
 
-function getStatusStyle(status) {
-  switch (status) {
-    case "available":
-      return "bg-emerald-100 text-emerald-700";
+import {
+  updateParkingSlot,
+  createParkingSlot,
+  deleteParkingSlot,
+} from "../services/parkingService";
 
-    case "reserved":
-      return "bg-amber-100 text-amber-700";
+import ParkingStats from "../components/parking/ParkingStats";
+import ParkingFilters from "../components/parking/ParkingFilters";
+import ParkingSlotCard from "../components/parking/ParkingSlotCard";
+import SlotModal from "../components/parking/SlotModal";
 
-    case "occupied":
-      return "bg-red-100 text-red-700";
-
-    case "maintenance":
-      return "bg-slate-200 text-slate-700";
-
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
-}
+import { ParkingSquare } from "lucide-react";
 
 export default function Parking() {
-  const { slots, loading } = useParking();
+  const { slots, loading, refreshSlots } = useParking();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "admin";
+  const isGateStaff = user?.role === "gate_staff";
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [zoneFilter, setZoneFilter] = useState("all");
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   if (loading) {
     return (
@@ -41,161 +47,194 @@ export default function Parking() {
     (slot) => slot.status === "occupied"
   ).length;
 
-  const reserved = slots.filter(
-    (slot) => slot.status === "reserved"
-  ).length;
-
   const maintenance = slots.filter(
     (slot) => slot.status === "maintenance"
   ).length;
 
+  const filteredSlots = slots.filter((slot) => {
+    const matchesSearch = slot.slot_number
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      slot.status === statusFilter;
+
+    const matchesZone =
+      zoneFilter === "all" ||
+      slot.zone === zoneFilter;
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesZone
+    );
+  });
+
+  async function handleSaveSlot() {
+    if (!selectedSlot) return;
+
+    try {
+      if (selectedSlot.id) {
+        await updateParkingSlot(
+          selectedSlot.id,
+          selectedSlot
+        );
+
+        toast.success(
+          "Parking slot updated successfully."
+        );
+      } else {
+        await createParkingSlot(selectedSlot);
+
+        toast.success(
+          "Parking slot created successfully."
+        );
+      }
+
+      await refreshSlots();
+      setSelectedSlot(null);
+
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        error.response?.data?.detail ??
+        "Failed to save parking slot."
+      );
+    }
+  }
+
+  async function handleDeleteSlot() {
+    if (!selectedSlot?.id) return;
+
+    const confirmed = window.confirm(
+      `Delete parking slot ${selectedSlot.slot_number}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteParkingSlot(
+        selectedSlot.id
+      );
+
+      await refreshSlots();
+
+      toast.success(
+        "Parking slot deleted successfully."
+      );
+
+      setSelectedSlot(null);
+
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        error.response?.data?.detail ??
+        "Unable to delete parking slot."
+      );
+    }
+  }
+
   return (
     <div>
 
-      <div className="mb-8">
+      <div className="mb-8 flex items-center justify-between">
 
-        <h1 className="text-3xl font-bold text-slate-800">
-          Parking Slots
-        </h1>
+        <div>
 
-        <p className="mt-2 text-slate-500">
-          View the live status of all parking spaces.
-        </p>
+          <h1 className="text-3xl font-bold text-slate-800">
+            🅿 Parking Overview
+          </h1>
+
+          <p className="mt-2 text-slate-500">
+            Monitor the live status of every parking space.
+          </p>
+
+        </div>
+
+        {isAdmin && (
+          <button
+            onClick={() =>
+              setSelectedSlot({
+                slot_number: "",
+                floor: 1,
+                zone: "A",
+                slot_type: "car",
+                has_charger: false,
+                status: "available",
+                base_rate: "",
+              })
+            }
+            className="rounded-xl bg-[#1A5F7A] px-5 py-2 font-semibold text-white transition hover:bg-[#144b61]"
+          >
+            + New Slot
+          </button>
+        )}
 
       </div>
 
-      <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <ParkingStats
+        total={slots.length}
+        available={available}
+        occupied={occupied}
+        maintenance={maintenance}
+      />
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <ParkingSquare
-              size={20}
-              className="text-[#1A5F7A]"
-            />
-            <span className="font-medium">
-              Total Slots
-            </span>
-          </div>
+      <ParkingFilters
+        search={search}
+        setSearch={setSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        zoneFilter={zoneFilter}
+        setZoneFilter={setZoneFilter}
+      />
 
-          <p className="text-3xl font-bold">
-            {slots.length}
+      {filteredSlots.length === 0 ? (
+
+        <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
+
+          <ParkingSquare
+            className="mx-auto mb-3 text-slate-400"
+            size={40}
+          />
+
+          <h2 className="text-xl font-semibold text-slate-700">
+            No parking slots found
+          </h2>
+
+          <p className="mt-2 text-slate-500">
+            Try changing your search or filters.
           </p>
+
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <CircleCheck
-              size={20}
-              className="text-emerald-600"
-            />
-            <span className="font-medium">
-              Available
-            </span>
-          </div>
-
-          <p className="text-3xl font-bold text-emerald-600">
-            {available}
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <CarFront
-              size={20}
-              className="text-red-500"
-            />
-            <span className="font-medium">
-              Occupied
-            </span>
-          </div>
-
-          <p className="text-3xl font-bold text-red-500">
-            {occupied}
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <Wrench
-              size={20}
-              className="text-slate-500"
-            />
-            <span className="font-medium">
-              Maintenance
-            </span>
-          </div>
-
-          <p className="text-3xl font-bold text-slate-600">
-            {maintenance}
-          </p>
-        </div>
-
-      </div>
-
-      {slots.length === 0 ? (
-        <div className="rounded-xl bg-white p-8 text-center shadow">
-          <p className="text-slate-500">
-            No parking slots found.
-          </p>
-        </div>
       ) : (
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
-          {slots.map((slot) => (
-
-            <div
+          {filteredSlots.map((slot) => (
+            <ParkingSlotCard
               key={slot.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-
-              <div className="mb-4 flex items-center justify-between">
-
-                <h2 className="text-xl font-bold">
-                  {slot.slot_number}
-                </h2>
-
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(
-                    slot.status
-                  )}`}
-                >
-                  {slot.status_display}
-                </span>
-
-              </div>
-
-              <div className="space-y-2 text-sm text-slate-600">
-
-                <p>
-                  <strong>Zone:</strong> {slot.zone}
-                </p>
-
-                <p>
-                  <strong>Floor:</strong> {slot.floor}
-                </p>
-
-                <p>
-                  <strong>Vehicle Type:</strong> {slot.slot_type}
-                </p>
-
-                <p>
-                  <strong>Rate:</strong> KES {slot.base_rate}/hr
-                </p>
-
-                {slot.has_charger && (
-                  <p className="font-medium text-[#1A5F7A]">
-                    ⚡ EV Charging Available
-                  </p>
-                )}
-
-              </div>
-
-            </div>
-
+              slot={slot}
+              isAdmin={isAdmin}
+              isGateStaff={isGateStaff}
+              onEdit={setSelectedSlot}
+            />
           ))}
 
         </div>
+
       )}
+
+      <SlotModal
+        selectedSlot={selectedSlot}
+        setSelectedSlot={setSelectedSlot}
+        onSave={handleSaveSlot}
+        onDelete={handleDeleteSlot}
+      />
+
     </div>
   );
 }
