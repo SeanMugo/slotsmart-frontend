@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 import { createUser } from "../../services/adminService";
@@ -19,8 +19,13 @@ export default function CreateUserModal({
   onSuccess,
 }) {
   const [loading, setLoading] = useState(false);
-
   const [form, setForm] = useState(INITIAL_FORM);
+
+  useEffect(() => {
+    if (isOpen) {
+      setForm(INITIAL_FORM);
+    }
+  }, [isOpen]);
 
   function handleChange(e) {
     setForm({

@@ -14,6 +14,7 @@ import ParkingStats from "../components/parking/ParkingStats";
 import ParkingFilters from "../components/parking/ParkingFilters";
 import ParkingSlotCard from "../components/parking/ParkingSlotCard";
 import SlotModal from "../components/parking/SlotModal";
+import ConfirmModal from "../components/common/ConfirmModal";
 
 import { ParkingSquare } from "lucide-react";
 
@@ -28,6 +29,8 @@ export default function Parking() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] =
+  useState(false);
 
   if (loading) {
     return (
@@ -106,36 +109,31 @@ export default function Parking() {
   }
 
   async function handleDeleteSlot() {
-    if (!selectedSlot?.id) return;
+  if (!selectedSlot?.id) return;
 
-    const confirmed = window.confirm(
-      `Delete parking slot ${selectedSlot.slot_number}?`
+  try {
+    await deleteParkingSlot(
+      selectedSlot.id
     );
 
-    if (!confirmed) return;
+    await refreshSlots();
 
-    try {
-      await deleteParkingSlot(
-        selectedSlot.id
-      );
+    toast.success(
+      `Parking slot ${selectedSlot.slot_number} deleted successfully.`
+    );
 
-      await refreshSlots();
+    setSelectedSlot(null);
+    setShowDeleteModal(false);
 
-      toast.success(
-        "Parking slot deleted successfully."
-      );
+  } catch (error) {
+    console.error(error);
 
-      setSelectedSlot(null);
-
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        error.response?.data?.detail ??
-        "Unable to delete parking slot."
-      );
-    }
+    toast.error(
+      error.response?.data?.detail ??
+      "Unable to delete parking slot."
+    );
   }
+}
 
   return (
     <div>
@@ -232,7 +230,20 @@ export default function Parking() {
         selectedSlot={selectedSlot}
         setSelectedSlot={setSelectedSlot}
         onSave={handleSaveSlot}
-        onDelete={handleDeleteSlot}
+        onDelete={() => setShowDeleteModal(true)}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Parking Slot"
+        message={
+          selectedSlot &&
+          `Delete parking slot ${selectedSlot.slot_number}? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        confirmColor="bg-red-600 hover:bg-red-700"
+        onConfirm={handleDeleteSlot}
+        onCancel={() => setShowDeleteModal(false)}
       />
 
     </div>

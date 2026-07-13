@@ -21,6 +21,11 @@ const linksByRole = {
       path: "/parking",
       icon: ParkingSquare,
     },
+    {
+      name: "Profile",
+      path: "/profile",
+      icon: User,
+    },
   ],
 
   gate_staff: [
@@ -69,12 +74,13 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const links = linksByRole[user?.role] || linksByRole.driver;
+  const links =
+    linksByRole[user?.role] || linksByRole.driver;
 
-  const handleLogout = () => {
+  function handleLogout() {
     logout();
     navigate("/");
-  };
+  }
 
   return (
     <aside
@@ -120,7 +126,9 @@ export default function Sidebar() {
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "10px",
-                background: isActive ? "#1A5F7A" : "transparent",
+                background: isActive
+                  ? "#1A5F7A"
+                  : "transparent",
                 transition: "0.2s",
               })}
             >

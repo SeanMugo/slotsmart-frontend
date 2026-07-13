@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Parking from "./pages/Parking";
 import GateDashboard from "./pages/GateDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import RoleRoute from "./components/common/RoleRoute";
@@ -28,6 +29,7 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/parking" element={<Parking />} />
+        <Route path="/profile" element={<Profile />} />
 
         <Route
           path="/gate"

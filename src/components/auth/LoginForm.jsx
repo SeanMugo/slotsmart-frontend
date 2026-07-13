@@ -42,11 +42,12 @@ export default function LoginForm() {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error(error);
-
-      toast.error(
-        error.response?.data?.message || "Invalid username or password."
-      );
+      const message =
+        error.response?.data?.non_field_errors?.[0] ||
+        error.response?.data?.detail ||
+        "Login failed."; 
+     
+      toast.error(message);
     }
   };
 
