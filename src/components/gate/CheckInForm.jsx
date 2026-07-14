@@ -4,20 +4,24 @@ import toast from "react-hot-toast";
 import { CarFront } from "lucide-react";
 
 import { getParkingSlots, checkIn } from "../../services/parkingService";
+import { getDrivers } from "../../services/adminService";
 
 export default function CheckInForm({ onCheckedIn }) {
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm();
 
   useEffect(() => {
     loadSlots();
+    loadDrivers();
   }, []);
 
   async function loadSlots() {
@@ -31,14 +35,27 @@ export default function CheckInForm({ onCheckedIn }) {
         : data.results || [];
 
       setAvailableSlots(
-        slots.filter((slot) => slot.status === "available")
+        slots.filter(
+          (slot) => slot.status === "available"
+        )
       );
     } catch (error) {
       console.error(error);
-
-      toast.error("Unable to load available parking slots.");
+      toast.error(
+        "Unable to load available parking slots."
+      );
     } finally {
       setLoadingSlots(false);
+    }
+  }
+
+  async function loadDrivers() {
+    try {
+      const data = await getDrivers();
+      setDrivers(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to load drivers.");
     }
   }
 
@@ -47,13 +64,15 @@ export default function CheckInForm({ onCheckedIn }) {
       const payload = {
         driver_id: Number(data.driver_id),
         slot_id: Number(data.slot_id),
-        license_plate: data.license_plate.toUpperCase(),
+        license_plate:
+          data.license_plate.toUpperCase(),
       };
 
       const response = await checkIn(payload);
 
       toast.success(
-        response.message || "Vehicle checked in successfully."
+        response.message ||
+          "Vehicle checked in successfully."
       );
 
       reset();
@@ -99,31 +118,51 @@ export default function CheckInForm({ onCheckedIn }) {
         className="space-y-5"
       >
 
+        {/* Driver */}
+
         <div>
 
           <label className="mb-2 block text-sm font-medium text-slate-700">
-            Driver ID
+            Driver
           </label>
 
-          <input
-            type="number"
-            min={1}
-            placeholder="Enter Driver ID"
+          <select
             disabled={isSubmitting}
             {...register("driver_id", {
-              required: "Driver ID is required.",
-              min: {
-                value: 1,
-                message: "Driver ID must be greater than 0.",
-              },
+              required:
+                "Please select a driver.",
               valueAsNumber: true,
             })}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A]/20 disabled:bg-slate-100"
-          />
+            onChange={(e) => {
+              const driver = drivers.find(
+                (d) =>
+                  d.id === Number(e.target.value)
+              );
 
-          <p className="mt-1 text-xs text-slate-400">
-            Ask the driver for the account ID shown on their profile.
-          </p>
+              if (driver) {
+                setValue(
+                  "license_plate",
+                  driver.default_vehicle || ""
+                );
+              }
+            }}
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A]/20"
+          >
+
+            <option value="">
+              Select a driver
+            </option>
+
+            {drivers.map((driver) => (
+              <option
+                key={driver.id}
+                value={driver.id}
+              >
+                #{driver.id} • {driver.name}
+              </option>
+            ))}
+
+          </select>
 
           {errors.driver_id && (
             <p className="mt-1 text-sm text-red-500">
@@ -133,6 +172,8 @@ export default function CheckInForm({ onCheckedIn }) {
 
         </div>
 
+        {/* Vehicle */}
+
         <div>
 
           <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -140,18 +181,22 @@ export default function CheckInForm({ onCheckedIn }) {
           </label>
 
           <input
+            defaultValue=""
             type="text"
             placeholder="KDA123A"
             disabled={isSubmitting}
             {...register("license_plate", {
-              required: "License plate is required.",
+              required:
+                "License plate is required.",
               minLength: {
                 value: 6,
-                message: "Enter a valid license plate.",
+                message:
+                  "Enter a valid license plate.",
               },
             })}
             onInput={(e) =>
-              (e.target.value = e.target.value.toUpperCase())
+              (e.target.value =
+                e.target.value.toUpperCase())
             }
             className="w-full rounded-xl border border-slate-300 px-4 py-3 uppercase outline-none transition focus:border-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A]/20 disabled:bg-slate-100"
           />
@@ -164,6 +209,8 @@ export default function CheckInForm({ onCheckedIn }) {
 
         </div>
 
+        {/* Parking Slot */}
+
         <div>
 
           <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -171,9 +218,12 @@ export default function CheckInForm({ onCheckedIn }) {
           </label>
 
           <select
-            disabled={loadingSlots || isSubmitting}
+            disabled={
+              loadingSlots || isSubmitting
+            }
             {...register("slot_id", {
-              required: "Please select a parking slot.",
+              required:
+                "Please select a parking slot.",
             })}
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A]/20 disabled:bg-slate-100"
           >
@@ -189,17 +239,20 @@ export default function CheckInForm({ onCheckedIn }) {
                 key={slot.id}
                 value={slot.id}
               >
-                {slot.slot_number} • Floor {slot.floor} • Zone {slot.zone} • KES{" "}
-                {slot.base_rate}/hr
+                {slot.slot_number} • Floor{" "}
+                {slot.floor} • Zone {slot.zone}
+                • KES {slot.base_rate}/hr
               </option>
             ))}
 
           </select>
 
           {!loadingSlots &&
-            availableSlots.length === 0 && (
+            availableSlots.length ===
+              0 && (
               <p className="mt-1 text-xs text-amber-600">
-                No parking slots are currently available.
+                No parking slots are
+                currently available.
               </p>
             )}
 

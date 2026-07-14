@@ -9,6 +9,11 @@ export const getAllUsers = async () => {
   return response.data;
 };
 
+export const getDrivers = async () => {
+  const response = await api.get("/auth/drivers/");
+  return response.data;
+};
+
 export const createUser = async (userData) => {
   const response = await api.post(
     "/auth/admin/users/create/",
