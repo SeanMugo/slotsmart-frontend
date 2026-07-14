@@ -72,6 +72,7 @@ export default function RegisterForm() {
                 username: formData.username,
                 email: formData.email,
                 password: formData.password,
+                password2: formData.confirm_password,
                 first_name,
                 last_name,
                 phone_number: formData.phone_number,
